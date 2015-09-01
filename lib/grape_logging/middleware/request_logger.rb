@@ -28,12 +28,14 @@ module GrapeLogging
       protected
       def parameters
         {
-            path: request.path,
-            params: request.params.to_hash,
-            method: request.request_method,
-            total: total_runtime,
-            db: @db_duration.round(2),
-            status: response.status
+          path: request.path,
+          params: request.params.to_hash,
+          method: request.request_method,
+          total: total_runtime,
+          db: @db_duration.round(2),
+          status: response.status,
+          remote_ip: remote_ip,
+          headers: request_headers
         }
       end
 
@@ -56,6 +58,17 @@ module GrapeLogging
 
       def stop_time
         @stop_time ||= Time.now
+      end
+
+      def remote_ip
+        env["action_dispatch.remote_ip"].to_s || request.ip
+      end
+
+      def request_headers
+        env.select {|k,v| k.start_with?('HTTP_')}
+           .collect {|pair| [pair[0].sub(/^HTTP_/, ''), pair[1]]}
+           .collect {|pair| pair.join(": ")}
+           .sort
       end
     end
   end
